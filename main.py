@@ -6,28 +6,13 @@ from telegram.ext import (
     MessageHandler, ContextTypes, filters
 )
 from PIL import Image
-from flask import Flask
-from threading import Thread
 import nest_asyncio
 
 user_photos = {}
 
-# ✅ إبقاء البوت شغال على Render
-def keep_alive():
-    app = Flask("")
-
-    @app.route("/")
-    def home():
-        return "✅ Bot is alive!", 200
-
-    def run():
-        app.run(host="0.0.0.0", port=8080)
-
-    Thread(target=run).start()
-
-# ✅ /start
+# ✅ بدء المحادثة
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("أرسل صوراً ثم أرسل /done لتحويلها إلى PDF.")
+    await update.message.reply_text("أرسل صورًا ثم أرسل /done لتحويلها إلى PDF.")
 
 # ✅ استقبال الصور
 async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -39,7 +24,7 @@ async def handle_photo(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_photos.setdefault(user_id, []).append(path)
     await update.message.reply_text("✅ تم حفظ الصورة!")
 
-# ✅ /done
+# ✅ عند /done — تحويل الصور إلى PDF
 async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.message.from_user.id
     photos = user_photos.get(user_id, [])
@@ -53,7 +38,7 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
         pdf_path = f"{user_id}.pdf"
         images[0].save(pdf_path, save_all=True, append_images=images[1:])
         await update.message.reply_document(open(pdf_path, "rb"))
-        await update.message.reply_text("📄 تم إنشاء ملف PDF!")
+        await update.message.reply_text("📄 تم إنشاء ملف PDF بنجاح!")
 
         for p in photos:
             os.remove(p)
@@ -67,7 +52,7 @@ async def done(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def run_bot():
     TOKEN = os.environ.get("BOT_TOKEN")
     if not TOKEN:
-        print("❌ لم يتم العثور على التوكن")
+        print("❌ لم يتم العثور على توكن البوت")
         return
 
     app = ApplicationBuilder().token(TOKEN).build()
@@ -77,8 +62,7 @@ async def run_bot():
     print("✅ البوت يعمل الآن...")
     await app.run_polling()
 
-# ✅ Main
+# ✅ نقطة التشغيل
 if __name__ == "__main__":
     nest_asyncio.apply()
-    keep_alive()
     asyncio.run(run_bot())
